@@ -34,7 +34,7 @@ exports.logApiInfo = async (req, res, next) => {
         const tokenValue = token.split(' ')[1];
         const decoded = jwt.verify(tokenValue, process.env.SECRET_KEY);
         
-        logData.userEmail= decoded.email || 'user@test.com';
+        logData.email= decoded.email || 'user@test.com';
 
     }
 } catch(error){
@@ -44,32 +44,43 @@ exports.logApiInfo = async (req, res, next) => {
 res.setHeader('logId', logData.logId);
 const responseBodyChunks = [];
 
-    // Intercept the response to log information about the outgoing response
-    const originalSend = res.send;
+    // // Intercept the response to log information about the outgoing response
+    // const originalSend = res.send;
   
-    res.send = async function (body) {
-      // Log information about the outgoing response
-    //   logData.responseSize = res.get('Content-Length') || 'unknown';
-    responseBodyChunks.push(Buffer.from(JSON.stringify(body)));
+    // res.send = async function (body) {
+    //   // Log information about the outgoing response
+    // //   logData.responseSize = res.get('Content-Length') || 'unknown';
+    // responseBodyChunks.push(Buffer.from(JSON.stringify(body)));
 
-     // Call the original send method
-     originalSend.call(res, body);
+    //  // Call the original send method
+    //  originalSend.call(res, body);
 
-    }
+    // }
+    // const route = req.url
+    // const activity = route.split('/');
+
+///////////////////
+
+const originalJson = res.json;
+    res.json = function (body) {
+        responseBodyChunks.push(Buffer.from(JSON.stringify(body)));
+        originalJson.call(res, body);
+    };
     const route = req.url
-    const activity = route.split('/');
+    const activity = route.split('/')
+
+    ////////////
 
     res.on('finish', async () => {
 
 try {
       logData.statusCode = res.statusCode;
-      logData.resHeader = JSON.stringify(res.getHeaders());
       logData.resTime = Date.now() - req.startTime;
   
   
         const responseBody = Buffer.concat(responseBodyChunks).toString("utf-8");
         const responseMessage = JSON.parse(responseBody)
-        logData.activity = `${logData.userEmail} perform activity to ${activity[3]} and ${responseMessage.message}`
+        logData.activity = `${logData.email} perform activity to ${activity[3]} and ${responseMessage.message}`
 
       // Store the log in the database
         await Log.create(logData);
