@@ -7,23 +7,22 @@ const uuid = require('uuid');
 
 exports.logApiInfo = async (req, res, next) => {
 
-    req.reqId = uuid.v4();
+    // req.reqId = uuid.v4();
     req.startTime = Date.now(); // Capture start time for response time calculation
     console.log(req.body)
 
     const logData = {
+        logId: uuid.v4(),
         method: req.method,
         userAgent:req.headers['user-agent'],
         host:req.headers.host,
         url: req.originalUrl,
-        userEmail: 'user@gmail.com',
-        payload: req.body,
-        reqBy: req.ip,
-        reqId: req.reqId,
-        reqHeader: JSON.stringify(req.headers),
-    //   responseSize: 'unknown',
         statusCode: 'unknown',
-        resHeader: 'unknown',
+        header: JSON.stringify(req.headers),
+        payload: req.body,
+        timestamp: new Date(),
+        name: 'user',
+        email: 'user@test.com',
         resTime: 'unknown'
     };
 
@@ -35,12 +34,14 @@ exports.logApiInfo = async (req, res, next) => {
         const tokenValue = token.split(' ')[1];
         const decoded = jwt.verify(tokenValue, process.env.SECRET_KEY);
         
-        logData.userEmail= decoded.email;
+        logData.userEmail= decoded.email || 'user@test.com';
+
     }
 } catch(error){
     console.error('Error in verifying JWT', error);
 }
- 
+
+res.setHeader('logId', logData.logId);
 const responseBodyChunks = [];
 
     // Intercept the response to log information about the outgoing response
@@ -68,14 +69,16 @@ try {
   
         const responseBody = Buffer.concat(responseBodyChunks).toString("utf-8");
         const responseMessage = JSON.parse(responseBody)
-        logData.activity = `${logEntry.name} perform activity to ${activity[3]} and ${responseMessage.message}`
-        
+        logData.activity = `${logData.userEmail} perform activity to ${activity[3]} and ${responseMessage.message}`
+
       // Store the log in the database
         await Log.create(logData);
       } catch (error) {
         console.error('Error storing log in the database:', error);
       }
   
+      console.log(JSON.stringify(logData, null, 2));
+
      
     })
   

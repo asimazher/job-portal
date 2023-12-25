@@ -4,10 +4,16 @@ const { sequelize } = require('../config/db');
 
 const Log = sequelize.define('Log', {
     logId: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
         primaryKey: true,
+        // allowNull: false,
     },
+    // logNumber: {
+    //     type: DataTypes.INTEGER,
+        // primaryKey: true,
+    //     autoIncrement: true,
+    //     allowNull: false,
+    //   },
     method: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -28,28 +34,28 @@ const Log = sequelize.define('Log', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    reqId: {
-        type: DataTypes.STRING,
-      },
-    reqHeader: {
+      header: {
         type: DataTypes.STRING,
       },
     payload: {
         type: DataTypes.JSON, 
         allowNull: true,
     },
-    reqBy: {
+    name: {
         type: DataTypes.STRING,
-      },
-    resHeader: {
-        type: DataTypes.STRING,
-      },
+        allowNull: true,
+    },
     resTime: {
         type: DataTypes.INTEGER,
       },
-    userEmail: {
+    email: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    activity: {
+        type: DataTypes.STRING,
+        allowNull: true,
+       
     },
 }, {
     tableName: 'logs',
