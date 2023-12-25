@@ -107,35 +107,6 @@ exports.setPassword = async (req, res) => {
  //  ????    a new password
     ////////
 
-    // const userData = new User({
-    //   username,
-    //   email,
-    //   password: hashedPassword,
-    // });
-
-    // Generate a verification token
-    // const verificationToken = jwt.sign(
-    //   { username: userData.username },
-    //   process.env.VERIFY_SECRET_KEY,
-    //   { expiresIn: "1d" }
-    // );
-
-    // Save the user with isVerified set to false
-    // userData.isVerified = false;
-
-    // const user = await userData.save();
-
-    // const verificationLink = `http://localhost:3000/api/auth/verify/${verificationToken}`;
-
-    // const emailOptions = {
-    //   to: email,
-    //   subject: "Account Verification",
-    //   text: `Click the following link to verify your account: ${verificationLink}`,
-    // };
-    // // Send verification email using nodemailer
-
-    // emailService(emailOptions);
-
     res
       .status(201)
       .json({
@@ -189,7 +160,7 @@ exports.loginUser = async (req, res) => {
     }
 
     const isPasswordValid = await bcrypt.compare(
-      req.body.password,
+      password,
       user.password
     );
 
@@ -239,18 +210,22 @@ exports.forgotPassword = async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    const resetLink = `http://localhost:3000/api/users/forgetpassword/${resetToken}`;
+    // -add-at-frontend-resetpassword-component-route
+    // api for button at front end form `http://localhost:3000/api/users/forgetpassword/${resetToken}`
+
+    const resetLink = `http://localhost:3000/api/users/reset-password/${resetToken}`;
 
     const emailOptions = {
       to: email,
       subject: "Password Reset",
       text: `Click the following link to reset your password: ${resetLink}`,
+      html: forgotPasswordTemplate
     };
 
     // Send password reset email with reset link using nodemailer
     emailService(emailOptions);
 
-    res.json({ message: "Password reset email sent successfully" });
+    res.json({ message: "Password reset link email sent successfully" });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", error });
   }
@@ -258,24 +233,117 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { newPassword } = req.body;
+    // const { token } = req.params;
+    const token = req.headers.authorization;
 
-    const decoded = jwt.verify(token, process.env.RESET_SECRET_KEY);
+    // console.log(token)
+    // console.log(tokenhead)
+    const { newPassword, confirmPassword } = req.body;
+    // console.log(confirmPassword)
 
-    const user = await User.findById({ _id: decoded.id });
-
+    // if (token && token.startsWith('Bearer')) {
+      const tokenValue = token.split(' ')[1];
+    // }
+    //   try {
+    //     const decodeToken = await util.promisify(jwt.verify)(
+    //       tokenValue,
+    //       process.env.SECERET_STRING
+    //     );
+    
+    const decoded = jwt.verify(tokenValue, process.env.SECRET_KEY);
+    
+    const user = await User.findOne({ where: {email: decoded.email}})
+    // const user = await User.findById({ _id: decoded.id });
+    
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({error: "password doesn't match."});
+    }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the attributes
     user.password = hashedPassword;
+    user.isVerified = true;
+    user.rememberToken = null;
 
     await user.save();
 
-    res.json({ message: "Password reset successful" });
+    res.json({ message: "new password set successfully, Now you can login." });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", error });
   }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    // const { token } = req.params;
+    const token = req.headers.authorization;
+
+    // console.log(token)
+    // console.log(tokenhead)
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    // console.log(confirmPassword)
+
+    // if (token && token.startsWith('Bearer')) {
+      const tokenArr = token.split(' ');
+
+      // console.log(req.headers)
+
+      const tokenValue = tokenArr[1]
+    // }
+    //   try {
+    //     const decodeToken = await util.promisify(jwt.verify)(
+    //       tokenValue,
+    //       process.env.SECERET_STRING
+    //     );
+    
+    const decoded = jwt.verify(tokenValue, process.env.SECRET_KEY);
+    
+    const user = await User.findOne({ where: {email: decoded.email}})
+    // const user = await User.findById({ _id: decoded.id });
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({error: "password doesn't match."});
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      oldPassword,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "password is incorrect. please enter correct password." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the attributes
+    user.password = hashedPassword;
+    user.isVerified = true;
+    user.rememberToken = null;
+
+    await user.save();
+
+    // console.log(res.body)
+    res.json({ message: "password changed successfully."});
+
+  // res.json({ message: "password changed successfully.",
+  // reqId : req.reqId });
+
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error", error });
+  }
+};
+
+
+const sendResponse = (res, statusCode, data, success) => {
+  return res.status(statusCode).json({ success, data });
 };

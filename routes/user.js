@@ -1,12 +1,11 @@
 const express = require("express");
 const {
-  addUser,
   loginUser,
   resetPassword,
   forgotPassword,
-  verifyUser,
   createUser,
   setPassword,
+  changePassword,
 } = require("../controllers/user");
 const userRouter = express.Router();
 
@@ -14,12 +13,16 @@ const userRouter = express.Router();
 
 userRouter.post("/createUser", createUser);
 
-userRouter.post("/setPassword/:token", setPassword);
+// userRouter.post("/setPassword/:token", setPassword);
+userRouter.patch("/setPassword/:token?", resetPassword);
+
 
 userRouter.post("/login", loginUser);
 
 userRouter.post("/forgot-password", forgotPassword);
 
-userRouter.post("/reset-password/:token", resetPassword);
+userRouter.patch("/reset-password/:token?", resetPassword);
+
+userRouter.patch("/change-password/:token?", changePassword);
 
 module.exports = userRouter;

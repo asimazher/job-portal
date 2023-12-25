@@ -1,7 +1,9 @@
 const express = require("express")
 const dotenv = require("dotenv")
 const {sequelize, connectDb} = require('./config/db');
-const userRouter = require("./routes/user")
+const userRouter = require("./routes/user");
+const { logApiInfo } = require("./middleware/apiLogs");
+const applicantRouter = require("./routes/applicant");
 
 const app = express()
 
@@ -14,10 +16,11 @@ sequelize.sync().then(() => {
   })
 
 // getCurrentTemperature()
+app.use(logApiInfo)
 
 app.use("/api/user", userRouter )
 
-// app.use("/api/customer", customerRouter )
+app.use("/api/applicant", applicantRouter )
 
 // app.use("/api/genre", genreRouter )
 

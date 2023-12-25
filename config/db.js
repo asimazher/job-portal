@@ -2,7 +2,8 @@ const { Sequelize } = require('sequelize');
 
 const sequelize = new Sequelize('job-portal', 'root', '', {
     host: 'localhost',
-    dialect: 'mysql'
+    dialect: 'mysql',
+    logging: false
   });
 const connectDb = async()=>{
   try {
