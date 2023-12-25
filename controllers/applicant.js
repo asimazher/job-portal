@@ -1,6 +1,7 @@
 const multer = require('multer');
 const { Applicant } = require('../models/Applicant');
 const express = require('express');
+const uuid = require('uuid');
 
 const app = express();
 
@@ -25,7 +26,7 @@ const storage = multer.diskStorage({
 const fileExtension = file.originalname.split('.').pop();
 
 // Construct the filename with a unique identifier and the original file extension
-const fileName = `applicant-${userName || 'unknown'}-CV.${fileExtension}`;
+const fileName = `applicant-${uuid.v4()}-CV.${fileExtension}`;
 
     cb(null, fileName);
   },
@@ -63,9 +64,10 @@ exports.submitApplication = async (req, res) => {
 
     console.log(req.body.userName)
     const cvFileName = req.file.filename;
-
+console.log(req.file.path)
     // Save application data to the database
     const newApplicant = await Applicant.create({
+    applicantId: uuid.v4(),
       userName,
       email,
       qualification,
